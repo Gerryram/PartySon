@@ -4,14 +4,12 @@ export async function POST(req) {
   try {
     const { prompt } = await req.json();
     
-    const key = process.env.ANTHROPIC_API_KEY;
-    console.log("KEY DEBUG:", key ? `${key.substring(0,10)}...` : "UNDEFINED");
-
+  
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": key,
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
