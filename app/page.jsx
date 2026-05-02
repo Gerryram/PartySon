@@ -2,6 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import ReinaXVScreen from "./components/ReinaXVScreen";
+import CotizadorPrincesa from "./components/CotizadorPrincesa";
+import PartnerScreen from "./components/PartnerScreen";
+import ExperienciaDetalle from "./components/ExperienciaDetalle";
 
 const BRAND = {
   blue: "#1B6FE8",
@@ -57,6 +60,7 @@ export default function PartySonApp() {
   const [input, setInput] = useState("");
   const [breakdown, setBreakdown] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState("pro");
   const textareaRef = useRef(null);
 
   const examples = [
@@ -93,8 +97,23 @@ export default function PartySonApp() {
     ? MOCK_PROVIDERS.filter((p) => p.category === activeCategory)
     : [];
 
-  if (screen === "xv") return <ReinaXVScreen onBack={() => setScreen("home")} />;
-  if (screen === "home") return <HomeScreen input={input} setInput={setInput} onAnalyze={analyzeEvent} examples={examples} textareaRef={textareaRef} onNavigateXV={() => setScreen("xv")} />;
+  if (screen === "xv") return (
+    <ReinaXVScreen
+      onBack={() => setScreen("home")}
+      onCotizador={() => setScreen("cotizador")}
+      onPackageDetail={(id) => { setSelectedPackage(id); setScreen("detalle"); }}
+    />
+  );
+  if (screen === "cotizador") return <CotizadorPrincesa onBack={() => setScreen("xv")} />;
+  if (screen === "partner")   return <PartnerScreen onBack={() => setScreen("home")} />;
+  if (screen === "detalle")   return (
+    <ExperienciaDetalle
+      packageId={selectedPackage}
+      onBack={() => setScreen("xv")}
+      onFinanciar={() => setScreen("xv")}
+    />
+  );
+  if (screen === "home") return <HomeScreen input={input} setInput={setInput} onAnalyze={analyzeEvent} examples={examples} textareaRef={textareaRef} onNavigateXV={() => setScreen("xv")} onNavigatePartner={() => setScreen("partner")} />;
   if (screen === "loading") return <LoadingScreen />;
   if (screen === "results") return (
     <ResultsScreen
@@ -117,7 +136,7 @@ export default function PartySonApp() {
   );
 }
 
-function HomeScreen({ input, setInput, onAnalyze, examples, textareaRef, onNavigateXV }) {
+function HomeScreen({ input, setInput, onAnalyze, examples, textareaRef, onNavigateXV, onNavigatePartner }) {
   const [focused, setFocused] = useState(false);
   const [particles] = useState(() =>
     Array.from({ length: 20 }, (_, i) => ({
@@ -181,7 +200,7 @@ function HomeScreen({ input, setInput, onAnalyze, examples, textareaRef, onNavig
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button style={{ background: "transparent", border: `1px solid rgba(255,255,255,0.2)`, color: "rgba(255,255,255,0.7)", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: "Nunito" }}>Iniciar sesión</button>
-          <button style={{ background: BRAND.blue, border: "none", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700, fontFamily: "Nunito" }}>Soy proveedor</button>
+          <button onClick={onNavigatePartner} style={{ background: BRAND.blue, border: "none", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700, fontFamily: "Nunito" }}>Soy proveedor</button>
         </div>
       </nav>
 

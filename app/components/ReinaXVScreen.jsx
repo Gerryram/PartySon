@@ -88,7 +88,7 @@ const FILTERS = [
   { id: "financiamiento",  label: "💳 Financiamiento" },
 ];
 
-export default function ReinaXVScreen({ onBack }) {
+export default function ReinaXVScreen({ onBack, onCotizador, onPackageDetail }) {
   const [activeFilter, setActiveFilter] = useState("all");
   const [plazo, setPlazo] = useState(12);
   const [selectedFin, setSelectedFin] = useState(null);
@@ -258,14 +258,16 @@ export default function ReinaXVScreen({ onBack }) {
                       color: p.priceGold ? C.purpleM : C.blue,
                     }}>{p.price}</div>
                   </div>
-                  <button style={{
-                    fontSize: 10, fontWeight: 600, padding: "6px 14px", borderRadius: 999, border: "none",
-                    cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
-                    background: p.vip
-                      ? "linear-gradient(90deg,#FFD600 0%,#ffb300 100%)"
-                      : p.featured ? C.purpleM : C.blue,
-                    color: p.vip ? "#5c3800" : C.white,
-                  }}>{p.cta}</button>
+                  <button
+                    onClick={() => onPackageDetail?.(p.id)}
+                    style={{
+                      fontSize: 10, fontWeight: 600, padding: "6px 14px", borderRadius: 999, border: "none",
+                      cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+                      background: p.vip
+                        ? "linear-gradient(90deg,#FFD600 0%,#ffb300 100%)"
+                        : p.featured ? C.purpleM : C.blue,
+                      color: p.vip ? "#5c3800" : C.white,
+                    }}>{p.cta}</button>
                 </div>
               </div>
             ))}
@@ -305,6 +307,29 @@ export default function ReinaXVScreen({ onBack }) {
             ))}
           </div>
         </>
+      )}
+
+      {/* ── Cotizador Princesa CTA ── */}
+      {(activeFilter === "all" || activeFilter === "paquetes") && (
+        <div style={{ padding: "0 14px 14px" }}>
+          <button
+            className="xv-cta-btn"
+            onClick={() => onCotizador?.()}
+            style={{
+              width: "100%", border: "none", borderRadius: 16, padding: "14px 16px", cursor: "pointer",
+              background: `linear-gradient(135deg, ${C.purpleM} 0%, #6b2f9e 100%)`,
+              color: C.white, display: "flex", alignItems: "center", gap: 12,
+              boxShadow: "0 4px 14px rgba(61,21,96,0.25)", textAlign: "left",
+            }}
+          >
+            <span style={{ fontSize: 24, flexShrink: 0 }}>🤖</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, marginBottom: 1 }}>Cotizar con Princesa IA</div>
+              <div style={{ fontSize: 10, opacity: 0.8 }}>Cuéntanos tu evento y te armamos la propuesta</div>
+            </div>
+            <span style={{ fontSize: 18, opacity: 0.7, flexShrink: 0 }}>›</span>
+          </button>
+        </div>
       )}
 
       {/* ── Financiamiento ── */}
