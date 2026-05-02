@@ -35,7 +35,7 @@ const PACKAGE_DATA = {
       { label: "👑 XV Años",  style: { background: PURPLE_L, color: PURPLE_M } },
       { label: "⭐ Popular",  style: { background: BLUE_L,   color: BLUE } },
     ],
-    desc: "La experiencia completa con show de streaming "Reina Live", mesa de regalos digital y todos los servicios premium para que tu fiesta sea inolvidable.",
+    desc: 'La experiencia completa con show de streaming "Reina Live", mesa de regalos digital y todos los servicios premium para que tu fiesta sea inolvidable.',
   },
   vip: {
     emoji: "✦",
