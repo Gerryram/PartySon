@@ -2,32 +2,34 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { prompt } = await req.json();
-    
-  
+    const body = await req.json();
+
+    // Vision analysis (image + prompt from Casatec/Pintatec)
+    const messages = body.messages;
+    if (!messages) {
+      return NextResponse.json({ error: "Missing messages" }, { status: 400 });
+    }
+
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
-        system: "Devuelve SOLO JSON sin backticks ni markdown. Campos requeridos: tipo, personas, presupuesto_total, resumen, servicios (array con: categoria, nombre, descripcion, presupuesto_sugerido, prioridad). Categorías válidas: salon, sonido, catering, decoracion, fotografia, entretenimiento, pastel, transporte. Prioridades: alta, media, baja.",
-        messages: [{ role: "user", content: prompt }]
-      })
+        messages,
+      }),
     });
 
     const d = await r.json();
-    console.log("ANTHROPIC RESPONSE:", JSON.stringify(d).substring(0, 200));
     if (d.error) return NextResponse.json({ error: d.error.message }, { status: 500 });
 
-    const t = (d.content?.[0]?.text || "{}").replace(/```json|```/g, "").trim();
-    return NextResponse.json(JSON.parse(t));
+    const text = d.content?.find((b) => b.type === "text")?.text || "Sin respuesta.";
+    return NextResponse.json({ text });
   } catch (e) {
-    console.log("CATCH ERROR:", e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

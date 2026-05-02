@@ -1,636 +1,874 @@
 "use client";
-
 import { useState, useRef, useEffect } from "react";
-import ReinaXVScreen from "./components/ReinaXVScreen";
-import CotizadorPrincesa from "./components/CotizadorPrincesa";
-import PartnerScreen from "./components/PartnerScreen";
-import ExperienciaDetalle from "./components/ExperienciaDetalle";
 
-const BRAND = {
-  blue: "#1B6FE8",
-  navy: "#1A4C8B",
-  yellow: "#FFD600",
-  amber: "#F5C518",
-  dark: "#0D1B2A",
-  light: "#F0F5FF",
-};
+// ─── CONFIG ────────────────────────────────────────────────────────────
+const WA_NUMBER = "526641234567";
+const BRAND = { name: "CASATEC", sub: "Reparaciones inteligentes" };
 
-const MOCK_PROVIDERS = [
-  { id: 1, name: "SonidoTJ Pro", category: "sonido", rating: 4.9, reviews: 87, price: 4500, location: "Zona Río", img: "🎵", verified: true },
-  { id: 2, name: "DJ Fantasma", category: "sonido", rating: 4.7, reviews: 54, price: 3200, location: "Playas", img: "🎧", verified: true },
-  { id: 3, name: "Banquetes Arroyo", category: "catering", rating: 4.8, reviews: 120, price: 280, priceUnit: "/persona", location: "Centro", img: "🍽️", verified: true },
-  { id: 4, name: "Chef Móvil TJ", category: "catering", rating: 4.6, reviews: 43, price: 220, priceUnit: "/persona", location: "Otay", img: "👨‍🍳", verified: false },
-  { id: 5, name: "Flores & Eventos Lupita", category: "decoracion", rating: 4.9, reviews: 201, price: 8500, location: "Zona Río", img: "🌸", verified: true },
-  { id: 6, name: "Deco Dreams MX", category: "decoracion", rating: 4.5, reviews: 67, price: 5500, location: "Ensenada", img: "✨", verified: false },
-  { id: 7, name: "Foto & Video Baja", category: "fotografia", rating: 5.0, reviews: 33, price: 7000, location: "Tijuana", img: "📸", verified: true },
-  { id: 8, name: "Momentos TJ", category: "fotografia", rating: 4.7, reviews: 88, price: 5500, location: "Rosarito", img: "🎥", verified: true },
-  { id: 9, name: "Salón Las Palmas", category: "salon", rating: 4.8, reviews: 156, price: 15000, location: "Zona Río", img: "🏛️", verified: true },
-  { id: 10, name: "Villa Baja Events", category: "salon", rating: 4.6, reviews: 72, price: 11000, location: "Tecate", img: "🏡", verified: true },
-  { id: 11, name: "Brincolines Fiesta", category: "entretenimiento", rating: 4.7, reviews: 39, price: 1800, location: "Tijuana", img: "🎪", verified: false },
-  { id: 12, name: "Animaciones Baja", category: "entretenimiento", rating: 4.9, reviews: 62, price: 2500, location: "Mexicali", img: "🎭", verified: true },
-  { id: 13, name: "Pastelería Dulce Baja", category: "pastel", rating: 4.9, reviews: 98, price: 2800, location: "Zona Río", img: "🎂", verified: true },
-  { id: 14, name: "Sweet Dreams TJ", category: "pastel", rating: 4.7, reviews: 45, price: 1900, location: "Playas", img: "🍰", verified: false },
-  { id: 15, name: "Transportes VIP BC", category: "transporte", rating: 4.8, reviews: 29, price: 3500, location: "Tijuana", img: "🚐", verified: true },
+// ─── SERVICES CATALOG ──────────────────────────────────────────────────
+const SERVICES = [
+  {
+    id: "pintura", name: "Pintura", emoji: "🎨",
+    color: "#C8F050", dark: "#7AAA10", badge: "ACTIVO",
+    desc: "Exterior, interior y acabados decorativos",
+    subServices: [
+      { name: "Pintura exterior", detail: "Fachadas y muros exteriores" },
+      { name: "Pintura interior", detail: "Cuartos, salas y cocinas" },
+      { name: "Acabados decorativos", detail: "Texturas, esmaltes y barnices" },
+      { name: "Impermeabilización", detail: "Azoteas y muros húmedos" },
+    ],
+    tiers: [
+      { tier: "Básico",   price: "35–50",   unit: "MXN/m²", detail: "1 mano, pintura estándar" },
+      { tier: "Pro",      price: "65–90",   unit: "MXN/m²", detail: "2 manos, preparación de superficie" },
+      { tier: "Premium",  price: "110–160", unit: "MXN/m²", detail: "Sellador + 2 manos + acabado fino" },
+    ],
+    prompt: `Eres un experto en cotización de pintura residencial en Tijuana, México. Analiza la imagen y responde con:
+1. Área estimada visible (m²)
+2. Estado de la superficie (bueno/regular/malo)
+3. Preparación necesaria
+4. Costo estimado por tier:
+   - Básico (35-50 MXN/m²): 1 mano, pintura estándar
+   - Pro (65-90 MXN/m²): 2 manos + preparación
+   - Premium (110-160 MXN/m²): sellador + acabado fino
+5. Tiempo estimado de trabajo
+
+Sé concreto. Si no puedes ver bien el área, da un rango estimado. Usa formato claro con emojis de apoyo. Responde en español.`,
+  },
+  {
+    id: "plomeria", name: "Plomería", emoji: "🔧",
+    color: "#4FC3F7", dark: "#0277BD",
+    desc: "Fugas, instalaciones y destapado",
+    subServices: [
+      { name: "Reparación de fugas", detail: "Tuberías, llaves y conexiones" },
+      { name: "Instalación sanitaria", detail: "WC, lavabos y regaderas" },
+      { name: "Destapado", detail: "Drenaje y bajadas de agua" },
+      { name: "Calentadores", detail: "Instalación y reparación" },
+    ],
+    tiers: [
+      { tier: "Diagnóstico", price: "300–500",   unit: "MXN",    detail: "Revisión y reporte" },
+      { tier: "Reparación",  price: "600–2,500", unit: "MXN",    detail: "Trabajo de reparación" },
+      { tier: "Instalación", price: "2,500–8k",  unit: "MXN",    detail: "Instalación completa" },
+    ],
+    prompt: `Eres un plomero experto en Tijuana, México. Analiza la imagen del problema de plomería:
+1. Diagnóstico del problema visible
+2. Causa probable
+3. Urgencia (inmediata / puede esperar)
+4. Solución recomendada
+5. Costo estimado:
+   - Diagnóstico (300-500 MXN)
+   - Reparación (600-2,500 MXN)
+   - Instalación completa (2,500-8,000 MXN)
+
+Responde en español con formato claro.`,
+  },
+  {
+    id: "electricidad", name: "Electricidad", emoji: "⚡",
+    color: "#FFE066", dark: "#F57F17",
+    desc: "Tableros, instalaciones y fallas",
+    subServices: [
+      { name: "Instalación eléctrica", detail: "Circuitos, canaletas y ductos" },
+      { name: "Tableros y breakers",  detail: "Instalación y ampliación" },
+      { name: "Iluminación LED",      detail: "Proyectos de iluminación" },
+      { name: "Contactos y apagadores", detail: "Reemplazo y nuevas salidas" },
+    ],
+    tiers: [
+      { tier: "Revisión",    price: "400–700",    unit: "MXN", detail: "Diagnóstico eléctrico" },
+      { tier: "Reparación",  price: "800–3,000",  unit: "MXN", detail: "Corrección de fallas" },
+      { tier: "Instalación", price: "3,000–15k",  unit: "MXN", detail: "Circuitos nuevos" },
+    ],
+    prompt: `Eres un electricista certificado en Tijuana, México. Analiza la imagen del problema eléctrico:
+1. Problema visible y diagnóstico
+2. Nivel de riesgo (seguro / precaución / peligro)
+3. Trabajo necesario
+4. Costo estimado:
+   - Revisión (400-700 MXN)
+   - Reparación (800-3,000 MXN)
+   - Instalación nueva (3,000-15,000 MXN)
+5. Si hay riesgo inmediato, indícalo claramente.
+
+Responde en español.`,
+  },
+  {
+    id: "albanileria", name: "Albañilería", emoji: "🧱",
+    color: "#FFAB76", dark: "#E65100",
+    desc: "Fisuras, muros y remodelación",
+    subServices: [
+      { name: "Reparación de fisuras", detail: "Grietas en muros y losas" },
+      { name: "Levantado de muros",   detail: "Block, tabique y tablaroca" },
+      { name: "Aplanados y yeso",     detail: "Acabados de pared" },
+      { name: "Demolición",           detail: "Muros y pisos" },
+    ],
+    tiers: [
+      { tier: "Reparación menor", price: "400–800",    unit: "MXN",     detail: "Fisuras y parches" },
+      { tier: "Obra por m²",      price: "150–280",    unit: "MXN/m²",  detail: "Aplanados y muros" },
+      { tier: "Proyecto mayor",   price: "Cotización", unit: "especial", detail: "Remodelaciones" },
+    ],
+    prompt: `Eres un maestro albañil experto en Tijuana, México. Analiza la imagen del daño o trabajo:
+1. Tipo y gravedad del daño
+2. Causa probable (humedad, asentamiento, etc.)
+3. Solución recomendada
+4. Costo estimado:
+   - Reparación menor (400-800 MXN)
+   - Trabajo por m² (150-280 MXN/m²)
+   - Proyecto mayor (cotización especial)
+
+Responde en español con formato claro.`,
+  },
+  {
+    id: "impermeabilizacion", name: "Impermeab.", emoji: "💧",
+    color: "#64FFDA", dark: "#00695C",
+    desc: "Azoteas, muros y filtraciones",
+    subServices: [
+      { name: "Impermeabilización de azotea", detail: "Sistemas monoásticos y membrana" },
+      { name: "Muros y fachadas",             detail: "Tratamiento de humedad exterior" },
+      { name: "Filtración interior",           detail: "Sótanos y muros húmedos" },
+      { name: "Mantenimiento preventivo",     detail: "Recubrimiento y sellado" },
+    ],
+    tiers: [
+      { tier: "Básico",  price: "80–120",  unit: "MXN/m²", detail: "1 capa estándar" },
+      { tier: "Pro",     price: "130–180", unit: "MXN/m²", detail: "Sistema multicapa" },
+      { tier: "Premium", price: "200–300", unit: "MXN/m²", detail: "Membrana + garantía 5 años" },
+    ],
+    prompt: `Eres un especialista en impermeabilización en Tijuana, México. Analiza la imagen:
+1. Área afectada estimada (m²)
+2. Tipo de filtración o daño visible
+3. Sistema de impermeabilización recomendado
+4. Costo estimado:
+   - Básico (80-120 MXN/m²)
+   - Pro (130-180 MXN/m²)
+   - Premium con membrana (200-300 MXN/m²)
+
+Responde en español.`,
+  },
+  {
+    id: "herreria", name: "Herrería", emoji: "🔩",
+    color: "#CFD8DC", dark: "#455A64",
+    desc: "Rejas, portones y estructuras",
+    subServices: [
+      { name: "Rejas y protecciones",  detail: "Ventanas y puertas de seguridad" },
+      { name: "Portones automáticos",  detail: "Instalación y automatización" },
+      { name: "Escaleras metálicas",   detail: "Diseño y fabricación" },
+      { name: "Estructuras",           detail: "Techos y pergolas metálicas" },
+    ],
+    tiers: [
+      { tier: "Reparación",  price: "500–1,500",  unit: "MXN",     detail: "Soldadura y arreglos" },
+      { tier: "Fabricación", price: "800–2,500",  unit: "MXN/m²",  detail: "Fabricación a medida" },
+      { tier: "Proyecto",    price: "Cotización", unit: "especial", detail: "Proyectos mayores" },
+    ],
+    prompt: `Eres un maestro herrero en Tijuana, México. Analiza la imagen del trabajo de herrería:
+1. Tipo de trabajo (reja, portón, escalera, estructura)
+2. Dimensiones aproximadas
+3. Material y acabado recomendado
+4. Costo estimado:
+   - Reparación (500-1,500 MXN)
+   - Fabricación por m² (800-2,500 MXN/m²)
+   - Proyecto especial (cotización)
+
+Responde en español.`,
+  },
+  {
+    id: "pisos", name: "Pisos", emoji: "⬛",
+    color: "#FFCC80", dark: "#E65100",
+    desc: "Azulejo, laminado y pulido",
+    subServices: [
+      { name: "Azulejo y cerámica",      detail: "Pisos y paredes" },
+      { name: "Piso laminado",           detail: "Flotante de madera y vinílico" },
+      { name: "Concreto pulido",         detail: "Microcemento y epóxico" },
+      { name: "Pulido y abrillantado",   detail: "Mármol y granito" },
+    ],
+    tiers: [
+      { tier: "Básico",  price: "120–200", unit: "MXN/m²", detail: "Material y colocación estándar" },
+      { tier: "Pro",     price: "250–400", unit: "MXN/m²", detail: "Material premium + junteado" },
+      { tier: "Premium", price: "500–900", unit: "MXN/m²", detail: "Materiales de importación" },
+    ],
+    prompt: `Eres un especialista en pisos en Tijuana, México. Analiza la imagen:
+1. Área estimada (m²)
+2. Estado del piso actual
+3. Tipo de piso recomendado para el espacio
+4. Costo estimado:
+   - Básico (120-200 MXN/m²)
+   - Pro (250-400 MXN/m²)
+   - Premium (500-900 MXN/m²)
+5. Tiempo estimado de instalación
+
+Responde en español.`,
+  },
+  {
+    id: "carpinteria", name: "Carpintería", emoji: "🪵",
+    color: "#A5D6A7", dark: "#2E7D32",
+    desc: "Muebles, closets y cocinas",
+    subServices: [
+      { name: "Muebles a medida",      detail: "Diseño y fabricación personalizada" },
+      { name: "Closets y vestidores",  detail: "Sistemas modulares y a medida" },
+      { name: "Cocinas integrales",    detail: "Diseño completo de cocina" },
+      { name: "Puertas y marcos",      detail: "Madera maciza y MDF" },
+    ],
+    tiers: [
+      { tier: "Reparación",  price: "600–2,000",  unit: "MXN",     detail: "Arreglos y ajustes" },
+      { tier: "Fabricación", price: "3,000–12k",  unit: "MXN",     detail: "Mueble estándar" },
+      { tier: "Proyecto",    price: "Cotización", unit: "especial", detail: "Cocinas y vestidores" },
+    ],
+    prompt: `Eres un maestro carpintero en Tijuana, México. Analiza la imagen:
+1. Tipo de mueble o elemento visible
+2. Materiales y dimensiones aproximadas
+3. Trabajo recomendado
+4. Costo estimado:
+   - Reparación (600-2,000 MXN)
+   - Fabricación estándar (3,000-12,000 MXN)
+   - Proyecto especial (cotización)
+
+Responde en español.`,
+  },
+  {
+    id: "ac", name: "A/C y HVAC", emoji: "❄️",
+    color: "#80DEEA", dark: "#00695C",
+    desc: "Mini-splits, mantenimiento y gas",
+    subServices: [
+      { name: "Instalación mini-split",    detail: "Todas las marcas y capacidades" },
+      { name: "Mantenimiento y limpieza",  detail: "Lavado y revisión completa" },
+      { name: "Carga de gas refrigerante", detail: "R-22, R-410A y R-32" },
+      { name: "Ductos de A/C central",     detail: "Instalación y reparación" },
+    ],
+    tiers: [
+      { tier: "Mantenimiento", price: "600–1,200",  unit: "MXN",     detail: "Limpieza y revisión" },
+      { tier: "Instalación",   price: "3,000–6,000", unit: "MXN",    detail: "Mini-split completo" },
+      { tier: "A/C central",   price: "Cotización", unit: "especial", detail: "Proyecto integral" },
+    ],
+    prompt: `Eres un técnico certificado en A/C y HVAC en Tijuana, México. Analiza la imagen y sé honesto sobre las limitaciones del diagnóstico visual.
+
+Responde con:
+1. 🔍 Lo que puedes ver: tipo de equipo, marca/modelo aproximado, estado visible
+2. ⚠️ Limitación importante: indica claramente que el diagnóstico eléctrico interno, nivel de gas refrigerante y estado del compresor NO pueden determinarse solo con una foto — requieren visita técnica
+3. 🔧 Servicio probable basado en lo visible:
+   - Mantenimiento/limpieza (600–1,200 MXN)
+   - Instalación de mini-split (3,000–6,000 MXN)
+   - Sistema central (cotización especial)
+4. 📅 Recomendación: "Para una cotización exacta, agenda una visita técnica sin costo."
+
+Sé profesional y honesto. Responde en español.`,
+  },
+  {
+    id: "vidrieria", name: "Vidriería", emoji: "🪟",
+    color: "#B3E5FC", dark: "#0277BD",
+    desc: "Ventanas, cancelería y espejos",
+    subServices: [
+      { name: "Cambio de vidrios",      detail: "Vidrio claro, templado y laminado" },
+      { name: "Cancelería de aluminio", detail: "Ventanas, puertas y divisiones" },
+      { name: "Espejos",                detail: "Instalación y biselado" },
+      { name: "Domos y tragaluces",     detail: "Policarbonato y vidrio" },
+    ],
+    tiers: [
+      { tier: "Reparación",  price: "400–1,500",  unit: "MXN",     detail: "Cambio de vidrio" },
+      { tier: "Instalación", price: "800–3,000",  unit: "MXN/m²",  detail: "Cancelería nueva" },
+      { tier: "Proyecto",    price: "Cotización", unit: "especial", detail: "Divisiones y domos" },
+    ],
+    prompt: `Eres un experto en vidriería y cancelería en Tijuana, México. Analiza la imagen:
+1. Tipo y dimensión aproximada del vidrio o ventana
+2. Estado visible
+3. Trabajo recomendado
+4. Costo estimado:
+   - Reparación/cambio de vidrio (400-1,500 MXN)
+   - Instalación cancelería (800-3,000 MXN/m²)
+   - Proyecto especial (cotización)
+
+Responde en español.`,
+  },
+  {
+    id: "limpieza", name: "Limpieza", emoji: "✨",
+    color: "#F8BBD0", dark: "#880E4F",
+    desc: "Profunda, post-obra y oficinas",
+    subServices: [
+      { name: "Limpieza profunda",     detail: "Hogar completo o por cuarto" },
+      { name: "Post-construcción",     detail: "Retiro de residuos y polvo fino" },
+      { name: "Oficinas y locales",    detail: "Mantenimiento periódico" },
+      { name: "Alfombras y tapicería", detail: "Lavado profundo a domicilio" },
+    ],
+    tiers: [
+      { tier: "Básico",    price: "150–250", unit: "MXN/cuarto", detail: "Limpieza estándar" },
+      { tier: "Profunda",  price: "300–500", unit: "MXN/cuarto", detail: "Con productos especializados" },
+      { tier: "Post-obra", price: "25–45",   unit: "MXN/m²",     detail: "Remoción de residuos" },
+    ],
+    prompt: `Eres un experto en limpieza profesional en Tijuana, México. Analiza la imagen del espacio:
+1. Tipo y tamaño aproximado del espacio
+2. Nivel de suciedad o tipo de limpieza necesaria
+3. Servicio recomendado
+4. Costo estimado:
+   - Limpieza básica (150-250 MXN/cuarto)
+   - Limpieza profunda (300-500 MXN/cuarto)
+   - Post-obra (25-45 MXN/m²)
+
+Responde en español.`,
+  },
+  {
+    id: "techos", name: "Techos", emoji: "🏠",
+    color: "#EF9A9A", dark: "#B71C1C",
+    desc: "Lámina, tejas y estructura",
+    subServices: [
+      { name: "Techo de lámina",     detail: "Galvanizada, pintro y policarbonato" },
+      { name: "Reparación de tejas", detail: "Cerámica, barro y concreto" },
+      { name: "Estructura metálica", detail: "Armado y reparación" },
+      { name: "Drenaje pluvial",     detail: "Canaletas y bajadas" },
+    ],
+    tiers: [
+      { tier: "Reparación",  price: "800–2,500",  unit: "MXN",     detail: "Parches y arreglos" },
+      { tier: "Instalación", price: "250–450",    unit: "MXN/m²",  detail: "Techo nuevo" },
+      { tier: "Estructura",  price: "Cotización", unit: "especial", detail: "Proyectos estructurales" },
+    ],
+    prompt: `Eres un experto en techados en Tijuana, México. Analiza la imagen:
+1. 🔍 Diagnóstico visual: tipo de techo, material, daños visibles
+2. 🚨 Urgencia: URGENTE / PRONTO / PREVENTIVO
+3. 💰 Costo orientativo:
+   - Reparación (800–2,500 MXN)
+   - Impermeabilización + reparación (3,000–8,000 MXN)
+   - Techo nuevo (250–450 MXN/m²)
+4. ⚠️ Aviso: cotización exacta requiere visita presencial.
+5. 📅 "Te recomendamos agendar una visita de inspección sin costo."
+
+Responde en español.`,
+  },
 ];
 
-const CATEGORY_LABELS = {
-  sonido: "Sonido & DJ",
-  catering: "Catering & Banquetes",
-  decoracion: "Decoración",
-  fotografia: "Fotografía & Video",
-  salon: "Salón / Venue",
-  entretenimiento: "Entretenimiento",
-  pastel: "Pastel",
-  transporte: "Transporte",
-};
+// ─── UTILS ─────────────────────────────────────────────────────────────
+const whatsapp = (msg) =>
+  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank");
 
-const CATEGORY_COLORS = {
-  sonido: "#1B6FE8",
-  catering: "#E85E1B",
-  decoracion: "#E81B8A",
-  fotografia: "#8A1BE8",
-  salon: "#1A4C8B",
-  entretenimiento: "#E8B01B",
-  pastel: "#1BE8A0",
-  transporte: "#1B8AE8",
-};
+const toBase64 = (file) =>
+  new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = () => rej(new Error("Error al leer imagen"));
+    r.readAsDataURL(file);
+  });
 
-export default function PartySonApp() {
-  const [screen, setScreen] = useState("home");
-  const [input, setInput] = useState("");
-  const [breakdown, setBreakdown] = useState(null);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [selectedPackage, setSelectedPackage] = useState("pro");
-  const textareaRef = useRef(null);
-
-  const examples = [
-    "Quinceañera para 150 personas en agosto, presupuesto $80,000 MXN",
-    "Boda civil íntima 60 personas, jardín, presupuesto $45,000 MXN",
-    "Fiesta de cumpleaños infantil 40 niños, presupuesto $15,000 MXN",
-    "Evento corporativo 200 personas, cena de gala, presupuesto $120,000 MXN",
-  ];
-
-  async function analyzeEvent() {
-    if (!input.trim()) return;
-    setScreen("loading");
-
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: input }),
-      });
-
-      const parsed = await response.json();
-      if (!parsed || !parsed.servicios || !Array.isArray(parsed.servicios)) throw new Error("Respuesta invalida: " + JSON.stringify(parsed));
-      setBreakdown(parsed);
-      setActiveCategory(parsed.servicios[0]?.categoria || null);
-      setScreen("results");
-    } catch (err) {
-      console.error(err);
-      setScreen("home");
-      alert("Hubo un error al analizar tu evento. Intenta de nuevo.");
-    }
+// ─── STYLES ────────────────────────────────────────────────────────────
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A1410; --bg2: #111c17; --bg3: #172318;
+    --surface: #1A2B22; --lime: #C8F050; --lime2: #a8d038;
+    --text: #e8f5e0; --muted: #7a9a80;
+    --border: rgba(200,240,80,0.12); --radius: 14px;
   }
+  body, html { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  .app { max-width: 420px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; overflow: hidden; }
+  .screen { min-height: calc(100vh - 72px); overflow-y: auto; padding-bottom: 88px; animation: fadeIn .22s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .top-bar { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--lime); line-height: 1; }
+  .brand-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .notif-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+  .hero { padding: 20px 20px 16px; background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%); }
+  .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--text); }
+  .hero h1 span { color: var(--lime); }
+  .hero p { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .lime-pill { display: inline-block; background: var(--lime); color: #0A1410; font-size: 10px; font-weight: 600; letter-spacing: 1px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; margin-bottom: 8px; }
+  .search-wrap { padding: 14px 20px 0; position: relative; }
+  .search-input { width: 100%; padding: 12px 16px 12px 40px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+  .search-input::placeholder { color: var(--muted); }
+  .search-wrap::after { content: '🔍'; position: absolute; left: 32px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+  .section-label { padding: 18px 20px 10px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .section-label span { color: var(--lime); font-size: 10px; cursor: pointer; }
+  .service-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 20px; }
+  .service-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 10px 12px; cursor: pointer; transition: transform .15s, border-color .15s, background .15s; position: relative; overflow: hidden; text-align: center; }
+  .service-card:hover { transform: translateY(-2px); background: var(--bg3); }
+  .service-card:active { transform: scale(0.97); }
+  .service-card .svc-emoji { font-size: 22px; line-height: 1; }
+  .service-card .svc-name { font-size: 11px; font-weight: 600; color: var(--text); margin-top: 6px; line-height: 1.2; }
+  .service-card .svc-desc { font-size: 9px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+  .badge-active { position: absolute; top: 6px; right: 6px; background: var(--lime); color: #0A1410; font-size: 7px; font-weight: 700; letter-spacing: .5px; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; }
+  .svc-accent-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 var(--radius) var(--radius); }
+  .svc-hero { padding: 24px 20px 20px; position: relative; }
+  .back-btn { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; margin-bottom: 16px; width: fit-content; }
+  .back-btn:hover { color: var(--text); }
+  .svc-hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; color: var(--text); }
+  .svc-hero-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .svc-icon-lg { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.1); }
+  .tier-cards { display: flex; flex-direction: column; gap: 10px; padding: 0 20px; }
+  .tier-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: border-color .15s; }
+  .tier-card.selected { border-width: 1.5px; }
+  .tier-card:hover { border-color: rgba(200,240,80,0.3); }
+  .tier-left .tier-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tier-left .tier-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tier-right .tier-price { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; }
+  .tier-right .tier-unit { font-size: 10px; color: var(--muted); text-align: right; }
+  .sub-list { padding: 0 20px; display: flex; flex-direction: column; gap: 8px; }
+  .sub-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .sub-item:hover { background: var(--surface); }
+  .sub-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sub-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .sub-detail { font-size: 11px; color: var(--muted); }
+  .cta-primary { width: 100%; padding: 16px; background: var(--lime); color: #0A1410; border: none; border-radius: var(--radius); font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; cursor: pointer; transition: transform .12s, background .12s; }
+  .cta-primary:hover { background: var(--lime2); }
+  .cta-primary:active { transform: scale(0.98); }
+  .cta-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .cta-secondary { width: 100%; padding: 14px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .12s; }
+  .cta-secondary:hover { background: var(--surface); }
+  .photo-zone { margin: 0 20px; border: 1.5px dashed rgba(200,240,80,0.3); border-radius: var(--radius); min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: border-color .2s, background .2s; overflow: hidden; position: relative; background: var(--bg3); }
+  .photo-zone:hover { border-color: var(--lime); background: rgba(200,240,80,0.04); }
+  .photo-zone img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+  .photo-overlay { position: absolute; inset: 0; background: rgba(10,20,16,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .photo-hint { font-size: 12px; color: var(--muted); text-align: center; padding: 0 20px; }
+  .photo-icon { font-size: 32px; }
+  .result-box { margin: 0 20px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .result-box h3 { font-size: 13px; font-weight: 600; color: var(--lime); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .result-box p { font-size: 13px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
+  .dot-pulse { display: flex; gap: 4px; }
+  .dot-pulse div { width: 6px; height: 6px; border-radius: 50%; background: var(--lime); animation: pulse 1.2s ease-in-out infinite; }
+  .dot-pulse div:nth-child(2) { animation-delay: .2s; }
+  .dot-pulse div:nth-child(3) { animation-delay: .4s; }
+  @keyframes pulse { 0%,80%,100% { transform: scale(0.6); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+  .form-group { padding: 0 20px; margin-bottom: 14px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .form-input, .form-select, .form-textarea { width: 100%; padding: 13px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(200,240,80,0.5); }
+  .form-select option { background: var(--bg); }
+  .form-textarea { resize: none; min-height: 80px; }
+  .steps-indicator { display: flex; align-items: center; gap: 6px; padding: 0 20px; margin-bottom: 20px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); transition: background .2s; }
+  .step-dot.active { background: var(--lime); border-color: var(--lime); }
+  .step-dot.done { background: rgba(200,240,80,0.5); border-color: var(--lime); }
+  .step-line { flex: 1; height: 1px; background: var(--border); }
+  .step-label { font-size: 11px; color: var(--muted); flex: 1; text-align: right; }
+  .confirm-screen { min-height: calc(100vh - 72px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 28px; gap: 16px; animation: fadeIn .3s ease; }
+  .confirm-icon { font-size: 56px; }
+  .confirm-screen h2 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; line-height: 1; color: var(--text); }
+  .confirm-screen h2 span { color: var(--lime); }
+  .confirm-screen p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .summary-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: left; }
+  .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+  .summary-row .label { color: var(--muted); }
+  .summary-row .value { color: var(--text); font-weight: 500; }
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; background: rgba(10,20,16,0.96); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; height: 72px; z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; transition: color .15s; color: var(--muted); }
+  .nav-item.active { color: var(--lime); }
+  .nav-item .nav-icon { font-size: 18px; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 500; letter-spacing: .5px; }
+  .wa-float { position: fixed; bottom: 84px; right: 16px; width: 48px; height: 48px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; box-shadow: 0 4px 16px rgba(37,211,102,0.4); z-index: 200; border: none; transition: transform .15s; }
+  .wa-float:hover { transform: scale(1.1); }
+  .divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .pad { padding: 0 20px; }
+  .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; } .mb16 { margin-bottom: 16px; }
+  .pintatec-link { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 20px; font-size: 11px; color: var(--muted); text-decoration: none; border-top: 1px solid var(--border); margin-top: 8px; }
+  .pintatec-link strong { color: var(--lime); }
+`;
 
-  const filteredProviders = breakdown
-    ? MOCK_PROVIDERS.filter((p) => p.category === activeCategory)
-    : [];
-
-  if (screen === "xv") return (
-    <ReinaXVScreen
-      onBack={() => setScreen("home")}
-      onCotizador={() => setScreen("cotizador")}
-      onPackageDetail={(id) => { setSelectedPackage(id); setScreen("detalle"); }}
-    />
-  );
-  if (screen === "cotizador") return <CotizadorPrincesa onBack={() => setScreen("xv")} />;
-  if (screen === "partner")   return <PartnerScreen onBack={() => setScreen("home")} />;
-  if (screen === "detalle")   return (
-    <ExperienciaDetalle
-      packageId={selectedPackage}
-      onBack={() => setScreen("xv")}
-      onFinanciar={() => setScreen("xv")}
-    />
-  );
-  if (screen === "home") return <HomeScreen input={input} setInput={setInput} onAnalyze={analyzeEvent} examples={examples} textareaRef={textareaRef} onNavigateXV={() => setScreen("xv")} onNavigatePartner={() => setScreen("partner")} />;
-  if (screen === "loading") return <LoadingScreen />;
-  if (screen === "results") return (
-    <ResultsScreen
-      breakdown={breakdown}
-      activeCategory={activeCategory}
-      setActiveCategory={setActiveCategory}
-      filteredProviders={filteredProviders}
-      onBack={() => setScreen("home")}
-      onViewProviders={() => setScreen("providers")}
-    />
-  );
-  if (screen === "providers") return (
-    <ProvidersScreen
-      breakdown={breakdown}
-      activeCategory={activeCategory}
-      setActiveCategory={setActiveCategory}
-      filteredProviders={filteredProviders}
-      onBack={() => setScreen("results")}
-    />
+// ─── TOP BAR ───────────────────────────────────────────────────────────
+function TopBar({ title, onBack, brand = BRAND }) {
+  return (
+    <div className="top-bar">
+      {onBack ? (
+        <div className="back-btn" onClick={onBack}>
+          <span>←</span> <span>{title}</span>
+        </div>
+      ) : (
+        <div>
+          <div className="brand">{brand.name}</div>
+          <div className="brand-sub">{brand.sub}</div>
+        </div>
+      )}
+      {!onBack && (
+        <button className="notif-btn" onClick={() => whatsapp("Hola! Necesito información sobre sus servicios.")}>
+          💬
+        </button>
+      )}
+    </div>
   );
 }
 
-function HomeScreen({ input, setInput, onAnalyze, examples, textareaRef, onNavigateXV, onNavigatePartner }) {
-  const [focused, setFocused] = useState(false);
-  const [particles] = useState(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 6 + 2,
-      delay: Math.random() * 3,
-      dur: Math.random() * 4 + 3,
-    }))
-  );
+// ─── HOME SCREEN ───────────────────────────────────────────────────────
+function HomeScreen({ onSelectService, services = SERVICES, brand = BRAND }) {
+  const [query, setQuery] = useState("");
+  const filtered = query.trim()
+    ? services.filter(s =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        s.desc.toLowerCase().includes(query.toLowerCase())
+      )
+    : services;
 
   return (
-    <div style={{
-      minHeight: "100vh", background: BRAND.dark, fontFamily: "'Nunito', sans-serif",
-      display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Source+Sans+3:wght@400;600&display=swap');
-        @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-20px) rotate(180deg)} }
-        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
-        @keyframes fade-up { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
-        .anim-1{animation:fade-up 0.6s ease forwards}
-        .anim-2{animation:fade-up 0.6s 0.15s ease both}
-        .anim-3{animation:fade-up 0.6s 0.3s ease both}
-        .anim-4{animation:fade-up 0.6s 0.45s ease both}
-        .example-chip:hover{background:rgba(27,111,232,0.25)!important;border-color:#1B6FE8!important;transform:translateY(-2px)}
-        .send-btn:hover{transform:scale(1.05);box-shadow:0 0 30px rgba(255,214,0,0.5)!important}
-        .send-btn:active{transform:scale(0.97)}
-        textarea::placeholder{color:rgba(255,255,255,0.3)}
-        textarea:focus{outline:none}
-        ::-webkit-scrollbar{display:none}
-      `}</style>
-
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {particles.map((p) => (
-          <div key={p.id} style={{
-            position: "absolute", left: `${p.x}%`, top: `${p.y}%`,
-            width: p.size, height: p.size, borderRadius: "50%",
-            background: p.id % 3 === 0 ? BRAND.yellow : p.id % 3 === 1 ? BRAND.blue : "rgba(255,255,255,0.3)",
-            opacity: 0.4,
-            animation: `float ${p.dur}s ${p.delay}s ease-in-out infinite`,
-          }} />
-        ))}
-        <div style={{
-          position: "absolute", top: "-20%", right: "-10%",
-          width: 600, height: 600, borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(27,111,232,0.15) 0%, transparent 70%)`,
-        }} />
-        <div style={{
-          position: "absolute", bottom: "-10%", left: "-5%",
-          width: 400, height: 400, borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(255,214,0,0.1) 0%, transparent 70%)`,
-        }} />
+    <div className="screen">
+      <TopBar brand={brand} />
+      <div className="hero">
+        <div className="lime-pill">Tijuana · B.C.</div>
+        <h1>REPARA<br /><span>MEJOR.</span></h1>
+        <p>Cotización por IA en 60 segundos.<br />{services.length} servicios. Profesionales verificados.</p>
       </div>
-
-      <nav className="anim-1" style={{ padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative", zIndex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.navy})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎉</div>
-          <span style={{ color: "white", fontWeight: 900, fontSize: 22, letterSpacing: -0.5 }}>Party<span style={{ color: BRAND.yellow }}>Son</span></span>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button style={{ background: "transparent", border: `1px solid rgba(255,255,255,0.2)`, color: "rgba(255,255,255,0.7)", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: "Nunito" }}>Iniciar sesión</button>
-          <button onClick={onNavigatePartner} style={{ background: BRAND.blue, border: "none", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 700, fontFamily: "Nunito" }}>Soy proveedor</button>
-        </div>
-      </nav>
-
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 24px 60px", position: "relative", zIndex: 1 }}>
-        <div className="anim-2" style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(27,111,232,0.15)",
-            border: `1px solid rgba(27,111,232,0.4)`, borderRadius: 20, padding: "6px 16px", marginBottom: 24,
-          }}>
-            <span style={{ fontSize: 14 }}>✨</span>
-            <span style={{ color: BRAND.blue, fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}>COTIZADOR CON IA · BAJA CALIFORNIA</span>
-          </div>
-          <h1 style={{
-            color: "white", fontSize: "clamp(32px, 6vw, 58px)", fontWeight: 900,
-            lineHeight: 1.1, marginBottom: 16, letterSpacing: -1,
-          }}>
-            Tu evento perfecto<br />
-            <span style={{
-              background: `linear-gradient(90deg, ${BRAND.yellow}, ${BRAND.amber}, ${BRAND.yellow})`,
-              backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              animation: "shimmer 3s linear infinite",
-            }}>comienza aquí</span>
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 17, maxWidth: 480, margin: "0 auto", lineHeight: 1.6, fontFamily: "'Source Sans 3', sans-serif" }}>
-            Describe tu evento y nuestra IA lo desglosa en servicios, presupuestos y te conecta con los mejores proveedores de la región.
-          </p>
-        </div>
-
-        <div className="anim-3" style={{
-          width: "100%", maxWidth: 640,
-          background: focused ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
-          border: `1.5px solid ${focused ? BRAND.blue : "rgba(255,255,255,0.1)"}`,
-          borderRadius: 20, padding: 24,
-          boxShadow: focused ? `0 0 40px rgba(27,111,232,0.2)` : "none",
-          transition: "all 0.3s ease",
-        }}>
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) onAnalyze(); }}
-            placeholder="Ej: Quiero organizar una quinceañera para 150 personas en agosto, con salón, DJ, catering y decoración. Mi presupuesto es de $80,000 MXN..."
-            style={{
-              width: "100%", minHeight: 110, background: "transparent", border: "none",
-              color: "white", fontSize: 15, lineHeight: 1.7, resize: "none",
-              fontFamily: "'Source Sans 3', sans-serif", boxSizing: "border-box",
-            }}
-          />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>⌘ + Enter para cotizar</span>
-            <button
-              className="send-btn"
-              onClick={onAnalyze}
-              disabled={!input.trim()}
-              style={{
-                background: input.trim() ? `linear-gradient(135deg, ${BRAND.yellow}, ${BRAND.amber})` : "rgba(255,255,255,0.1)",
-                border: "none", color: input.trim() ? BRAND.dark : "rgba(255,255,255,0.3)",
-                padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 800,
-                cursor: input.trim() ? "pointer" : "not-allowed",
-                fontFamily: "Nunito", transition: "all 0.2s ease",
-                boxShadow: input.trim() ? `0 4px 20px rgba(255,214,0,0.3)` : "none",
-              }}
-            >
-              Cotizar evento →
-            </button>
-          </div>
-        </div>
-
-        <div className="anim-4" style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 640 }}>
-          {examples.map((ex, i) => (
-            <button
-              key={i}
-              className="example-chip"
-              onClick={() => setInput(ex)}
-              style={{
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.6)", padding: "7px 14px", borderRadius: 20,
-                fontSize: 12, cursor: "pointer", fontFamily: "Nunito", transition: "all 0.2s ease",
-              }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-
-        {/* Reina XV Banner */}
-        <div
-          onClick={onNavigateXV}
-          className="anim-4"
-          style={{
-            marginTop: 16, width: "100%", maxWidth: 640,
-            background: "linear-gradient(135deg,#1a0a2e 0%,#5b1c9f 100%)",
-            borderRadius: 20, padding: "14px 18px",
-            display: "flex", alignItems: "center", gap: 12,
-            cursor: "pointer", position: "relative", overflow: "hidden",
-          }}
-        >
-          <div style={{ position: "absolute", right: -10, top: -10, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,214,0,0.12)", pointerEvents: "none" }} />
-          <span style={{ fontSize: 28, flexShrink: 0 }}>👑</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#FFD600", textTransform: "uppercase", marginBottom: 2 }}>Nuevo · Reina XV</div>
-            <div style={{ fontFamily: "Nunito", fontSize: 14, fontWeight: 700, color: "white", marginBottom: 1 }}>Tu fiesta de XV perfecta</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)" }}>Paquetes, show en vivo y financiamiento</div>
-          </div>
-          <span style={{ fontSize: 20, color: "rgba(255,255,255,0.5)", flexShrink: 0 }}>›</span>
-        </div>
-      </main>
-
-      <div style={{
-        display: "flex", justifyContent: "center", gap: "clamp(24px,5vw,64px)",
-        padding: "20px 24px", borderTop: "1px solid rgba(255,255,255,0.06)",
-        position: "relative", zIndex: 1,
-      }}>
-        {[["500+", "Proveedores"], ["1,200+", "Eventos"], ["4.8★", "Calificación"], ["TJ · BC", "Región"]].map(([val, label]) => (
-          <div key={label} style={{ textAlign: "center" }}>
-            <div style={{ color: BRAND.yellow, fontWeight: 900, fontSize: 18 }}>{val}</div>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>{label}</div>
+      <div className="search-wrap mt12">
+        <input
+          className="search-input"
+          placeholder="¿Qué necesitas reparar?"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      <div className="section-label">
+        Servicios disponibles
+        <span>{filtered.length} de {services.length}</span>
+      </div>
+      <div className="service-grid">
+        {filtered.map((svc) => (
+          <div key={svc.id} className="service-card" onClick={() => onSelectService(svc)}>
+            {svc.badge && <div className="badge-active">{svc.badge}</div>}
+            <div className="svc-emoji">{svc.emoji}</div>
+            <div className="svc-name">{svc.name}</div>
+            <div className="svc-desc">{svc.desc}</div>
+            <div className="svc-accent-bar" style={{ background: svc.color }} />
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function LoadingScreen() {
-  const [step, setStep] = useState(0);
-  const steps = ["Analizando tu evento...", "Identificando servicios...", "Calculando presupuestos...", "Buscando proveedores..."];
-
-  useEffect(() => {
-    const s = setInterval(() => setStep(p => (p + 1) % steps.length), 1000);
-    return () => clearInterval(s);
-  }, []);
-
-  return (
-    <div style={{
-      minHeight: "100vh", background: BRAND.dark, display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center", fontFamily: "Nunito",
-    }}>
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}} @keyframes ping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:0.5}}`}</style>
-      <div style={{ position: "relative", marginBottom: 40 }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%",
-          border: `3px solid rgba(27,111,232,0.2)`,
-          borderTop: `3px solid ${BRAND.blue}`,
-          animation: "spin 1s linear infinite",
-        }} />
-        <div style={{
-          position: "absolute", inset: 8,
-          borderRadius: "50%", background: `linear-gradient(135deg, rgba(27,111,232,0.15), rgba(255,214,0,0.1))`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
-          animation: "ping 2s ease-in-out infinite",
-        }}>🎉</div>
-      </div>
-      <h2 style={{ color: "white", fontWeight: 800, fontSize: 20, marginBottom: 8 }}>{steps[step]}</h2>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>La IA está trabajando para ti</p>
-    </div>
-  );
-}
-
-function ResultsScreen({ breakdown, activeCategory, setActiveCategory, filteredProviders, onBack, onViewProviders }) {
-  const totalPresupuesto = breakdown?.servicios?.reduce((s, sv) => s + sv.presupuesto_sugerido, 0) || 0;
-
-  return (
-    <div style={{ minHeight: "100vh", background: BRAND.dark, fontFamily: "Nunito", color: "white" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Source+Sans+3:wght@400;600&display=swap');
-        @keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        .service-card:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,0.3)!important}
-        .prov-card:hover{transform:translateY(-3px);border-color:#1B6FE8!important}
-        ::-webkit-scrollbar{display:none}
-      `}</style>
-
-      <div style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "16px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button onClick={onBack} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "Nunito" }}>← Volver</button>
-            <span style={{ fontWeight: 900, fontSize: 20 }}>Party<span style={{ color: BRAND.yellow }}>Son</span></span>
-          </div>
-          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Tu cotización</span>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
-        <div style={{
-          background: `linear-gradient(135deg, rgba(27,111,232,0.2), rgba(26,76,139,0.15))`,
-          border: `1px solid rgba(27,111,232,0.3)`, borderRadius: 20, padding: 28, marginBottom: 32,
-          animation: "fade-up 0.5s ease",
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: 28 }}>🎊</span>
-                <div>
-                  <span style={{ fontSize: 11, color: BRAND.blue, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Evento detectado</span>
-                  <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>{breakdown?.tipo}</h2>
-                </div>
-              </div>
-              <p style={{ color: "rgba(255,255,255,0.6)", margin: 0, fontSize: 14, fontFamily: "'Source Sans 3', sans-serif" }}>{breakdown?.resumen}</p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>Presupuesto total</div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: BRAND.yellow }}>${breakdown?.presupuesto_total?.toLocaleString()} MXN</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{breakdown?.personas} personas</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>
-              <span>Presupuesto asignado</span>
-              <span>${totalPresupuesto.toLocaleString()} MXN ({Math.round(totalPresupuesto / breakdown?.presupuesto_total * 100)}%)</span>
-            </div>
-            <div style={{ height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3 }}>
-              <div style={{
-                height: "100%", borderRadius: 3, width: `${Math.min(100, totalPresupuesto / breakdown?.presupuesto_total * 100)}%`,
-                background: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.yellow})`, transition: "width 1s ease",
-              }} />
-            </div>
-          </div>
-        </div>
-
-        <h3 style={{ fontWeight: 800, fontSize: 16, marginBottom: 16, color: "rgba(255,255,255,0.8)" }}>
-          Servicios sugeridos por la IA ({breakdown?.servicios?.length})
-        </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14, marginBottom: 36 }}>
-          {breakdown?.servicios?.map((sv, i) => (
-            <div
-              key={i}
-              className="service-card"
-              onClick={() => setActiveCategory(sv.categoria)}
-              style={{
-                background: activeCategory === sv.categoria ? `rgba(27,111,232,0.2)` : "rgba(255,255,255,0.04)",
-                border: `1.5px solid ${activeCategory === sv.categoria ? BRAND.blue : "rgba(255,255,255,0.08)"}`,
-                borderRadius: 16, padding: 18, cursor: "pointer", transition: "all 0.2s ease",
-                animation: `fade-up 0.4s ${i * 0.07}s ease both`,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                <div style={{
-                  background: `${CATEGORY_COLORS[sv.categoria]}22`,
-                  color: CATEGORY_COLORS[sv.categoria] || BRAND.blue,
-                  padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                }}>
-                  {CATEGORY_LABELS[sv.categoria] || sv.categoria}
-                </div>
-                <div style={{
-                  fontSize: 10, padding: "3px 8px", borderRadius: 6, fontWeight: 700,
-                  background: sv.prioridad === "alta" ? "rgba(239,68,68,0.2)" : sv.prioridad === "media" ? "rgba(251,146,60,0.2)" : "rgba(34,197,94,0.2)",
-                  color: sv.prioridad === "alta" ? "#f87171" : sv.prioridad === "media" ? "#fb923c" : "#4ade80",
-                }}>
-                  {sv.prioridad?.toUpperCase()}
-                </div>
-              </div>
-              <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>{sv.nombre}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 12, fontFamily: "'Source Sans 3', sans-serif" }}>{sv.descripcion}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: BRAND.yellow }}>
-                ${sv.presupuesto_sugerido?.toLocaleString()} <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>MXN</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {activeCategory && (
-          <div style={{ animation: "fade-up 0.4s ease" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 800, fontSize: 16, margin: 0 }}>
-                Proveedores: {CATEGORY_LABELS[activeCategory]}
-              </h3>
-              <button onClick={onViewProviders} style={{
-                background: BRAND.blue, border: "none", color: "white", padding: "8px 18px",
-                borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Nunito",
-              }}>
-                Ver todos →
-              </button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
-              {filteredProviders.slice(0, 4).map((p) => (
-                <ProviderCard key={p.id} provider={p} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProvidersScreen({ breakdown, activeCategory, setActiveCategory, filteredProviders, onBack }) {
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("rating");
-
-  const sorted = [...filteredProviders]
-    .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => sortBy === "rating" ? b.rating - a.rating : a.price - b.price);
-
-  return (
-    <div style={{ minHeight: "100vh", background: BRAND.dark, fontFamily: "Nunito", color: "white" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Source+Sans+3:wght@400;600&display=swap');
-        @keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        .prov-card:hover{transform:translateY(-4px)!important;border-color:#1B6FE8!important;box-shadow:0 12px 40px rgba(27,111,232,0.2)!important}
-        input::placeholder{color:rgba(255,255,255,0.25)}
-        input:focus{outline:none}
-        ::-webkit-scrollbar{display:none}
-      `}</style>
-
-      <div style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "16px 24px", position: "sticky", top: 0, zIndex: 10, backdropFilter: "blur(10px)" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button onClick={onBack} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.6)", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "Nunito" }}>← Cotización</button>
-            <span style={{ fontWeight: 900, fontSize: 20 }}>Party<span style={{ color: BRAND.yellow }}>Son</span></span>
-          </div>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar proveedor..."
-            style={{
-              flex: 1, maxWidth: 300, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-              color: "white", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontFamily: "Nunito",
-            }}
-          />
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div className="section-label mt16">Pagos</div>
+      <div className="pad">
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
+          <span style={{ fontSize: 20 }}>💳</span>
           <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>Proveedores en Baja California</h2>
-            <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Para tu {breakdown?.tipo} · {breakdown?.personas} personas</p>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Esquema 40 · 30 · 30</div>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>Anticipo, a mitad de obra, al terminar</div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Ordenar:</span>
-            {["rating", "precio"].map(s => (
-              <button key={s} onClick={() => setSortBy(s)} style={{
-                background: sortBy === s ? BRAND.blue : "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                color: sortBy === s ? "white" : "rgba(255,255,255,0.5)",
-                padding: "6px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontFamily: "Nunito", fontWeight: 700,
-              }}>
-                {s === "rating" ? "⭐ Calificación" : "💰 Precio"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-          {breakdown?.servicios?.map(sv => (
-            <button
-              key={sv.categoria}
-              onClick={() => setActiveCategory(sv.categoria)}
-              style={{
-                background: activeCategory === sv.categoria ? BRAND.blue : "rgba(255,255,255,0.06)",
-                border: `1px solid ${activeCategory === sv.categoria ? BRAND.blue : "rgba(255,255,255,0.12)"}`,
-                color: activeCategory === sv.categoria ? "white" : "rgba(255,255,255,0.6)",
-                padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontFamily: "Nunito", fontWeight: 700,
-                transition: "all 0.2s ease",
-              }}
-            >
-              {CATEGORY_LABELS[sv.categoria] || sv.categoria}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {sorted.map((p, i) => (
-            <div key={p.id} style={{ animation: `fade-up 0.4s ${i * 0.05}s ease both` }}>
-              <ProviderCard provider={p} large />
-            </div>
-          ))}
-          {sorted.length === 0 && (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "rgba(255,255,255,0.3)" }}>
-              No se encontraron proveedores para esta categoría
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function ProviderCard({ provider: p, large }) {
-  return (
-    <div
-      className="prov-card"
-      style={{
-        background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.08)",
-        borderRadius: 16, padding: large ? 20 : 16, cursor: "pointer", transition: "all 0.25s ease",
-      }}
-    >
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <div style={{
-          width: large ? 54 : 44, height: large ? 54 : 44, borderRadius: 12,
-          background: `linear-gradient(135deg, rgba(27,111,232,0.3), rgba(26,76,139,0.3))`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: large ? 26 : 20, flexShrink: 0,
-        }}>
-          {p.img}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-            <span style={{ fontWeight: 800, fontSize: large ? 15 : 14 }}>{p.name}</span>
-            {p.verified && <span style={{ fontSize: 12 }}>✅</span>}
+      {brand.name === "CASATEC" && (
+        <div style={{ padding: "16px 20px 4px" }}>
+          <div style={{ background: "var(--bg3)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--lime)", letterSpacing: 1 }}>PINTATEC</div>
+              <div style={{ fontSize: 10, color: "var(--muted)" }}>Especialistas en pintura · pintatec.mx</div>
+            </div>
+            <span style={{ fontSize: 10, color: "var(--muted)" }}>subsidiaria ↗</span>
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>📍 {p.location}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-            <span style={{ color: BRAND.yellow, fontWeight: 800, fontSize: 13 }}>★ {p.rating}</span>
-            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>({p.reviews} reseñas)</span>
-          </div>
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: large ? 17 : 15, fontWeight: 900, color: BRAND.yellow }}>${p.price.toLocaleString()}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>MXN{p.priceUnit || ""}</div>
-        </div>
-      </div>
-      {large && (
-        <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
-          <button style={{
-            flex: 1, background: BRAND.blue, border: "none", color: "white",
-            padding: "9px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Nunito",
-          }}>
-            Solicitar cotización
-          </button>
-          <button style={{
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.6)", padding: "9px 14px", borderRadius: 10, cursor: "pointer", fontFamily: "Nunito",
-          }}>
-            💬
-          </button>
         </div>
       )}
     </div>
+  );
+}
+
+// ─── SERVICE DETAIL SCREEN ─────────────────────────────────────────────
+function ServiceScreen({ service, onBack, onEstimate, onBook }) {
+  const [selectedTier, setSelectedTier] = useState(null);
+  const accent = service.color;
+  return (
+    <div className="screen">
+      <TopBar title="Servicios" onBack={onBack} />
+      <div className="svc-hero">
+        <div className="svc-icon-lg" style={{ background: `${accent}22`, border: `1px solid ${accent}44` }}>{service.emoji}</div>
+        <div className="svc-hero-title" style={{ color: accent }}>{service.name.toUpperCase()}</div>
+        <div className="svc-hero-sub">{service.desc}</div>
+        {service.badge && <span className="lime-pill mt8" style={{ display: "inline-block" }}>{service.badge}</span>}
+      </div>
+      <div className="section-label">Tipos de servicio</div>
+      <div className="sub-list">
+        {service.subServices.map((sub, i) => (
+          <div className="sub-item" key={i}>
+            <div className="sub-dot" style={{ background: accent }} />
+            <div><div className="sub-name">{sub.name}</div><div className="sub-detail">{sub.detail}</div></div>
+          </div>
+        ))}
+      </div>
+      <div className="section-label mt16">Tiers de precio</div>
+      <div className="tier-cards">
+        {service.tiers.map((t, i) => (
+          <div
+            key={i}
+            className={`tier-card${selectedTier === i ? " selected" : ""}`}
+            style={selectedTier === i ? { borderColor: accent } : {}}
+            onClick={() => setSelectedTier(i)}
+          >
+            <div className="tier-left"><div className="tier-name">{t.tier}</div><div className="tier-detail">{t.detail}</div></div>
+            <div className="tier-right"><div className="tier-price" style={{ color: accent }}>{t.price}</div><div className="tier-unit">{t.unit}</div></div>
+          </div>
+        ))}
+      </div>
+      <div className="pad mt20 mb16" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button className="cta-primary" onClick={() => onEstimate(service)}>📸 COTIZAR CON IA</button>
+        <button className="cta-secondary" onClick={() => onBook(service, selectedTier != null ? service.tiers[selectedTier] : null)}>
+          Agendar sin cotización
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── AI ESTIMATE SCREEN ────────────────────────────────────────────────
+function EstimateScreen({ service, onBack, onBook, brandName = BRAND.name }) {
+  const [imgSrc, setImgSrc]   = useState(null);
+  const [imgB64, setImgB64]   = useState(null);
+  const [mime, setMime]       = useState("image/jpeg");
+  const [result, setResult]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
+  const fileRef = useRef();
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResult(null); setError(null);
+    setImgSrc(URL.createObjectURL(file));
+    setMime(file.type || "image/jpeg");
+    setImgB64(await toBase64(file));
+  };
+
+  const analyze = async () => {
+    if (!imgB64) return;
+    setLoading(true); setResult(null); setError(null);
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mime, data: imgB64 } },
+              { type: "text",  text: service.prompt }
+            ]
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResult(data.text);
+    } catch (err) {
+      setError("Error al analizar. Intenta de nuevo o contacta por WhatsApp.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="screen">
+      <TopBar title={service.name} onBack={onBack} />
+      <div style={{ padding: "20px 20px 12px" }}>
+        <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>Cotización IA · {service.name}</div>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: service.color, lineHeight: 1 }}>SUBE UNA FOTO</div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Estimado profesional en segundos</div>
+      </div>
+      <div className="photo-zone" style={{ minHeight: imgSrc ? 240 : 180 }} onClick={() => fileRef.current?.click()}>
+        {imgSrc && <img src={imgSrc} alt="preview" />}
+        <div className="photo-overlay" style={{ opacity: imgSrc ? 0.85 : 1 }}>
+          <div className="photo-icon">{imgSrc ? "🔄" : "📸"}</div>
+          <div className="photo-hint" style={{ color: imgSrc ? "#fff" : "var(--muted)" }}>
+            {imgSrc ? "Toca para cambiar la foto" : `Sube una foto del área\n(${service.name.toLowerCase()})`}
+          </div>
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+      <div className="pad mt12">
+        <button className="cta-primary" onClick={analyze} disabled={!imgB64 || loading}>
+          {loading ? "ANALIZANDO..." : imgB64 ? "ANALIZAR CON IA →" : "SELECCIONA UNA FOTO"}
+        </button>
+      </div>
+      {loading && (
+        <div className="pad mt12 result-box" style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 0 }}>
+          <div className="dot-pulse"><div/><div/><div/></div>
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>Analizando con IA...</span>
+        </div>
+      )}
+      {error && (
+        <div className="pad mt12"><div className="result-box" style={{ borderColor: "rgba(255,80,80,0.3)" }}><p style={{ color: "#ff8080" }}>{error}</p></div></div>
+      )}
+      {result && !loading && (
+        <>
+          <div className="pad mt12"><div className="result-box"><h3>📊 Estimado — {service.name}</h3><p>{result}</p></div></div>
+          <div className="pad mt12 mb16" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button className="cta-primary" onClick={() => whatsapp(`Hola! Acabo de usar el estimador de IA para ${service.name} en ${brandName}.\n\nEstimado:\n${result.slice(0, 300)}...`)}>
+              📲 AGENDAR POR WHATSAPP
+            </button>
+            <button className="cta-secondary" onClick={() => onBook(service, null)}>Agendar en el app</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── BOOKING SCREEN ────────────────────────────────────────────────────
+const STEPS = ["Servicio", "Datos", "Fecha", "Confirmar"];
+
+function BookingScreen({ service, tier, onBack, onConfirm, brandName = BRAND.name }) {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState({ name: "", phone: "", address: "", notes: "", date: "", time: "", payment: "40/30/30" });
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const canNext = [true, form.name && form.phone && form.address, form.date && form.time, true][step];
+  const advance = () => { if (step < 3) setStep(s => s + 1); else onConfirm({ service, tier, form, brandName }); };
+  const today = new Date().toISOString().split("T")[0];
+
+  return (
+    <div className="screen">
+      <TopBar title="Agendar" onBack={step > 0 ? () => setStep(s => s - 1) : onBack} />
+      <div style={{ padding: "16px 20px 8px" }}>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 30, color: service?.color || "var(--lime)", lineHeight: 1 }}>{STEPS[step].toUpperCase()}</div>
+      </div>
+      <div className="steps-indicator">
+        {STEPS.map((s, i) => (
+          <><div key={s} className={`step-dot${i === step ? " active" : i < step ? " done" : ""}`} />{i < STEPS.length - 1 && <div className="step-line" />}</>
+        ))}
+        <span className="step-label">{step + 1} / {STEPS.length}</span>
+      </div>
+      {step === 0 && (
+        <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="sub-item" style={{ background: service?.color + "22", borderColor: service?.color + "44" }}>
+            <span style={{ fontSize: 24 }}>{service?.emoji}</span>
+            <div><div className="sub-name">{service?.name}</div><div className="sub-detail">{service?.desc}</div></div>
+          </div>
+          {tier && (
+            <div className="tier-card" style={{ borderColor: service?.color }}>
+              <div className="tier-left"><div className="tier-name">Tier: {tier.tier}</div><div className="tier-detail">{tier.detail}</div></div>
+              <div className="tier-right"><div className="tier-price" style={{ color: service?.color }}>{tier.price}</div><div className="tier-unit">{tier.unit}</div></div>
+            </div>
+          )}
+          <div className="sub-item" style={{ marginTop: 4 }}>
+            <span>💳</span>
+            <div><div className="sub-name">Pago 40 · 30 · 30</div><div className="sub-detail">Anticipo al confirmar, 30% a mitad, 30% al finalizar</div></div>
+          </div>
+        </div>
+      )}
+      {step === 1 && (
+        <>
+          <div className="form-group"><label className="form-label">Nombre completo</label><input className="form-input" placeholder="Tu nombre" value={form.name} onChange={set("name")} /></div>
+          <div className="form-group"><label className="form-label">Teléfono / WhatsApp</label><input className="form-input" placeholder="664 000 0000" type="tel" value={form.phone} onChange={set("phone")} /></div>
+          <div className="form-group"><label className="form-label">Dirección del inmueble</label><input className="form-input" placeholder="Calle, número, colonia, Tijuana" value={form.address} onChange={set("address")} /></div>
+          <div className="form-group"><label className="form-label">Notas adicionales (opcional)</label><textarea className="form-textarea" placeholder="Describe brevemente el trabajo..." value={form.notes} onChange={set("notes")} /></div>
+        </>
+      )}
+      {step === 2 && (
+        <>
+          <div className="form-group"><label className="form-label">Fecha preferida</label><input className="form-input" type="date" min={today} value={form.date} onChange={set("date")} /></div>
+          <div className="form-group">
+            <label className="form-label">Horario</label>
+            <select className="form-select" value={form.time} onChange={set("time")}>
+              <option value="">— Selecciona —</option>
+              <option value="8:00 – 10:00">8:00 – 10:00 (Temprano)</option>
+              <option value="10:00 – 12:00">10:00 – 12:00 (Mañana)</option>
+              <option value="12:00 – 14:00">12:00 – 14:00 (Mediodía)</option>
+              <option value="14:00 – 17:00">14:00 – 17:00 (Tarde)</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Esquema de pago</label>
+            <select className="form-select" value={form.payment} onChange={set("payment")}>
+              <option value="40/30/30">40 / 30 / 30 (Recomendado)</option>
+              <option value="50/50">50% anticipo / 50% al terminar</option>
+              <option value="100%">Pago total al finalizar (requiere aprobación)</option>
+            </select>
+          </div>
+        </>
+      )}
+      {step === 3 && (
+        <div className="pad">
+          <div className="summary-card">
+            <div className="summary-row"><span className="label">Servicio</span><span className="value">{service?.name}</span></div>
+            {tier && <div className="summary-row"><span className="label">Tier</span><span className="value">{tier.tier} · {tier.price} {tier.unit}</span></div>}
+            <div className="divider" />
+            <div className="summary-row"><span className="label">Nombre</span><span className="value">{form.name}</span></div>
+            <div className="summary-row"><span className="label">Teléfono</span><span className="value">{form.phone}</span></div>
+            <div className="summary-row"><span className="label">Dirección</span><span className="value" style={{ maxWidth: 180, textAlign: "right" }}>{form.address}</span></div>
+            <div className="divider" />
+            <div className="summary-row"><span className="label">Fecha</span><span className="value">{form.date}</span></div>
+            <div className="summary-row"><span className="label">Horario</span><span className="value">{form.time}</span></div>
+            <div className="summary-row"><span className="label">Pago</span><span className="value">{form.payment}</span></div>
+          </div>
+        </div>
+      )}
+      <div className="pad mt16 mb16" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button className="cta-primary" onClick={advance} disabled={!canNext}>{step < 3 ? "SIGUIENTE →" : "CONFIRMAR CITA ✓"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CONFIRM SCREEN ────────────────────────────────────────────────────
+function ConfirmScreen({ booking, onHome }) {
+  const { service, tier, form, brandName = BRAND.name } = booking;
+  useEffect(() => {
+    const msg = `✅ *Nueva cita ${brandName}*\n\n📋 *Servicio:* ${service.name}${tier ? ` (${tier.tier})` : ""}\n👤 *Cliente:* ${form.name}\n📱 *Tel:* ${form.phone}\n📍 *Dirección:* ${form.address}\n📅 *Fecha:* ${form.date} ${form.time}\n💳 *Pago:* ${form.payment}${form.notes ? `\n📝 *Notas:* ${form.notes}` : ""}`;
+    setTimeout(() => whatsapp(msg), 800);
+  }, []);
+  return (
+    <div className="confirm-screen">
+      <div className="confirm-icon">✅</div>
+      <h2>CITA<br /><span>CONFIRMADA</span></h2>
+      <p>Tu solicitud ha sido enviada.<br />Un especialista te contactará pronto.</p>
+      <div className="summary-card">
+        <div className="summary-row"><span className="label">Servicio</span><span className="value">{service.name}</span></div>
+        {tier && <div className="summary-row"><span className="label">Tier</span><span className="value">{tier.tier}</span></div>}
+        <div className="summary-row"><span className="label">Fecha</span><span className="value">{form.date}</span></div>
+        <div className="summary-row"><span className="label">Horario</span><span className="value">{form.time}</span></div>
+      </div>
+      <button className="cta-primary" style={{ width: "100%" }} onClick={() => whatsapp(`Hola! Acabo de agendar una cita de ${service.name} para el ${form.date} en ${brandName}.`)}>
+        💬 ABRIR WHATSAPP
+      </button>
+      <button className="cta-secondary" style={{ width: "100%" }} onClick={onHome}>← Volver al inicio</button>
+    </div>
+  );
+}
+
+// ─── APP ROOT ──────────────────────────────────────────────────────────
+export default function App({ brand = BRAND, services = SERVICES }) {
+  const [view,    setView]    = useState("home");
+  const [selSvc,  setSelSvc]  = useState(null);
+  const [selTier, setSelTier] = useState(null);
+  const [booking, setBooking] = useState(null);
+  const [navTab,  setNavTab]  = useState("home");
+
+  const goHome = () => { setView("home"); setNavTab("home"); setSelSvc(null); setSelTier(null); };
+
+  const navItems = [
+    { id: "home",  label: "Inicio",  icon: "🏠", action: goHome },
+    { id: "quote", label: "Cotizar", icon: "📸", action: () => { if (selSvc) setView("estimate"); else setView("home"); setNavTab("quote"); } },
+    { id: "book",  label: "Agendar", icon: "📅", action: () => { setView("booking"); setNavTab("book"); } },
+    { id: "wa",    label: "Ayuda",   icon: "💬", action: () => whatsapp(`Hola! Necesito ayuda con ${brand.name}.`) },
+  ];
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="app">
+        {view === "home" && <HomeScreen brand={brand} services={services} onSelectService={(svc) => { setSelSvc(svc); setView("service"); }} />}
+        {view === "service" && selSvc && (
+          <ServiceScreen
+            service={selSvc}
+            onBack={goHome}
+            onEstimate={(svc) => { setSelSvc(svc); setView("estimate"); }}
+            onBook={(svc, t) => { setSelSvc(svc); setSelTier(t); setView("booking"); }}
+          />
+        )}
+        {view === "estimate" && selSvc && (
+          <EstimateScreen
+            service={selSvc}
+            brandName={brand.name}
+            onBack={() => setView("service")}
+            onBook={(svc, t) => { setSelSvc(svc); setSelTier(t); setView("booking"); }}
+          />
+        )}
+        {view === "booking" && (
+          <BookingScreen
+            service={selSvc || services[0]}
+            tier={selTier}
+            brandName={brand.name}
+            onBack={() => setView(selSvc ? "service" : "home")}
+            onConfirm={(b) => { setBooking(b); setView("confirm"); }}
+          />
+        )}
+        {view === "confirm" && booking && <ConfirmScreen booking={booking} onHome={goHome} />}
+
+        {view !== "confirm" && (
+          <button className="wa-float" onClick={() => whatsapp(`Hola! Quiero información sobre ${brand.name}.`)}>💬</button>
+        )}
+
+        <nav className="bottom-nav">
+          {navItems.map((item) => (
+            <div
+              key={item.id}
+              className={`nav-item${navTab === item.id ? " active" : ""}`}
+              onClick={() => { item.action(); if (item.id !== "wa") setNavTab(item.id); }}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </div>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }
