@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
 
   // Skip static files, API routes, and already-routed internal paths
@@ -16,17 +15,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // partyson.* → /partyson (event marketplace)
-  if (hostname.includes("partyson")) {
+  // Each Vercel project sets BRAND in environment variables:
+  //   BRAND=partyson  → partyson.vercel.app
+  //   BRAND=pintatec  → pintatec2.vercel.app
+  //   BRAND=casatec   → casatec.vercel.app (default)
+  const brand = process.env.BRAND;
+
+  if (brand === "partyson") {
     return NextResponse.rewrite(new URL("/partyson", request.url));
   }
 
-  // pintatec.* → /pintatec (painting subsidiary)
-  if (hostname.includes("pintatec")) {
+  if (brand === "pintatec") {
     return NextResponse.rewrite(new URL("/pintatec", request.url));
   }
 
-  // casatec.* (or localhost) → / (main Casatec app)
+  // casatec or no BRAND set → main Casatec app
   return NextResponse.next();
 }
 
