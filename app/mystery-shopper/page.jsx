@@ -497,16 +497,23 @@ function EvaluationScreen({ mission: m, onBack, onSubmit }) {
 }
 
 // ── REPORT SCREEN ─────────────────────────────────────────────────────────
-function ReportScreen({ mission: m, report, onHome }) {
+function ReportScreen({ mission: m, report, onSend }) {
+  const [sending, setSending] = useState(false);
   const score = report?.score ?? 0;
   const radius = 48;
   const circ = 2 * Math.PI * radius;
   const strokeDash = (score / 100) * circ;
   const color = score >= 80 ? "#10B981" : score >= 60 ? "#F59E0B" : "#EF4444";
 
+  const handleSend = async () => {
+    setSending(true);
+    await new Promise((r) => setTimeout(r, 1800));
+    onSend();
+  };
+
   return (
     <div className="screen">
-      <TopBar onBack={onHome} title="Misiones" />
+      <TopBar title="Reporte" />
       <div className="report-wrap mt20">
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
@@ -565,16 +572,52 @@ function ReportScreen({ mission: m, report, onHome }) {
           </div>
         )}
 
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "14px 16px", marginBottom: 16 }}>
+        <div style={{ background: "var(--surface)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "var(--radius)", padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>PAGO POR ESTA AUDITORÍA</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#F59E0B" }}>${m.pay} MXN</div>
-          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Procesado en 24–48 hrs hábiles</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Procesado en 24–48 hrs hábiles tras aprobación</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-          <button className="btn-primary" onClick={onHome}>← Ver más misiones</button>
+          <button className="btn-primary" onClick={handleSend} disabled={sending}>
+            {sending
+              ? <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                  <span style={{ fontSize: 13 }}>Enviando reporte...</span>
+                  <span style={{ display: "flex", gap: 4 }}>
+                    {[0, 1, 2].map(i => <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#0F0A14", display: "inline-block", animation: `dp 1.2s ${i * 0.2}s ease-in-out infinite` }} />)}
+                  </span>
+                </span>
+              : `Enviar reporte oficial · cobrar $${m.pay} MXN →`
+            }
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── SUCCESS SCREEN ────────────────────────────────────────────────────────
+function SuccessScreen({ mission: m, onHome }) {
+  return (
+    <div className="confirm-screen">
+      <div className="confirm-icon">🎉</div>
+      <div className="confirm-title">REPORTE<br /><span>ENVIADO</span></div>
+      <div className="confirm-sub">
+        Tu auditoría de <strong>{m.business}</strong> fue entregada exitosamente.<br />
+        El pago se procesará en 24–48 hrs hábiles.
+      </div>
+      <div style={{ width: "100%", background: "var(--surface)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "var(--radius)", padding: "18px 20px", textAlign: "center" }}>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" }}>Pago en camino</div>
+        <div style={{ fontSize: 32, fontWeight: 700, color: "#F59E0B" }}>${m.pay} MXN</div>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📲 Te notificaremos cuando se acredite</div>
+      </div>
+      <div style={{ width: "100%", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: "var(--radius)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 20 }}>🕵️</span>
+        <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+          Recuerda: no compartas detalles de esta auditoría con el negocio evaluado.
+        </div>
+      </div>
+      <button className="btn-primary" style={{ width: "100%" }} onClick={onHome}>Ver más misiones →</button>
     </div>
   );
 }
@@ -609,7 +652,14 @@ export default function MysteryShopperApp() {
           />
         )}
         {view === "report" && mission && (
-          <ReportScreen mission={mission} report={report} onHome={goHome} />
+          <ReportScreen
+            mission={mission}
+            report={report}
+            onSend={() => setView("success")}
+          />
+        )}
+        {view === "success" && mission && (
+          <SuccessScreen mission={mission} onHome={goHome} />
         )}
       </div>
     </>
