@@ -10,15 +10,17 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/pintatec") ||
     pathname.startsWith("/partyson") ||
+    pathname.startsWith("/mystery-shopper") ||
     pathname.includes(".")
   ) {
     return NextResponse.next();
   }
 
   // Each Vercel project sets BRAND in environment variables:
-  //   BRAND=partyson  → partyson.vercel.app
-  //   BRAND=pintatec  → pintatec2.vercel.app
-  //   BRAND=casatec   → casatec.vercel.app (default)
+  //   BRAND=partyson         → partyson.vercel.app
+  //   BRAND=pintatec         → pintatec.vercel.app
+  //   BRAND=mystery-shopper  → mystery-shopper.vercel.app
+  //   BRAND=casatec          → casatec.vercel.app (default)
   const brand = process.env.BRAND;
 
   if (brand === "partyson") {
@@ -27,6 +29,10 @@ export function proxy(request: NextRequest) {
 
   if (brand === "pintatec") {
     return NextResponse.rewrite(new URL("/pintatec", request.url));
+  }
+
+  if (brand === "mystery-shopper") {
+    return NextResponse.rewrite(new URL("/mystery-shopper", request.url));
   }
 
   // casatec or no BRAND set → main Casatec app
