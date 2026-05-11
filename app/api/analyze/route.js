@@ -49,10 +49,30 @@ export async function POST(req) {
 
     // ── Mystery Shopper: evaluation analysis ── { evaluation }
     if (body.evaluation) {
-      const { business, category, answers } = body.evaluation;
-      const evalText = Object.entries(answers)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join("\n");
+      const { business, category, location, totalScore, blockScores = [], failures = [], observations = [] } = body.evaluation;
+
+      const blockScoreText = blockScores.map(b => `  • ${b.section}: ${b.score}%`).join("\n");
+      const failuresText = failures.length > 0
+        ? failures.map(f => `  • ${f}`).join("\n")
+        : "  (Sin incumplimientos registrados)";
+      const observationsText = observations.length > 0
+        ? observations.join("\n\n")
+        : "  (Sin observaciones adicionales)";
+
+      const userContent = `Negocio: ${business}
+Categoría: ${category}
+Ubicación: ${location || ""}
+Puntaje global calculado: ${totalScore}/100
+
+SCORES POR BLOQUE:
+${blockScoreText}
+
+ÍTEMS INCUMPLIDOS (respuesta "No"):
+${failuresText}
+
+OBSERVACIONES DETALLADAS DEL AUDITOR:
+${observationsText}`;
+
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -61,18 +81,24 @@ export async function POST(req) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1200,
-          system: "Eres un experto en auditoría de experiencia de cliente (mystery shopper) en México. Analiza la evaluación y devuelve SOLO JSON sin markdown. Campos requeridos: score (número 0-100), resumen (string, 2-3 oraciones), fortalezas (string, lista con saltos de línea), areas_mejora (string, lista con saltos de línea), recomendaciones (string, 3 acciones concretas).",
-          messages: [{
-            role: "user",
-            content: `Negocio: ${business}\nCategoría: ${category}\n\nResultados de la evaluación:\n${evalText}`,
-          }],
+          model: "claude-sonnet-4-6",
+          max_tokens: 1800,
+          system: `Eres un experto en auditoría de experiencia de cliente (mystery shopper) en México con años de experiencia evaluando restaurantes y negocios de servicio.
+
+Recibirás los resultados estructurados de una visita de mystery shopper con: puntaje global, scores por bloque, ítems incumplidos y observaciones detalladas del auditor.
+
+Devuelve SOLO JSON válido sin markdown, backticks ni texto adicional. Campos requeridos:
+- score: número 0-100 (usa el puntaje global calculado proporcionado)
+- resumen: string de 3-4 oraciones describiendo la experiencia general, mencionando el nivel de servicio y los aspectos más destacados
+- fortalezas: string con lista de puntos fuertes específicos (con saltos de línea \\n entre cada punto), basada en los bloques con mejor score y las observaciones positivas del auditor
+- areas_mejora: string con lista de áreas de mejora específicas y concretas (con saltos de línea \\n), basada en los ítems incumplidos y bloques con menor score
+- recomendaciones: string con 3-5 acciones concretas y accionables que el negocio debe implementar (con saltos de línea \\n), priorizadas por impacto en la experiencia del cliente`,
+          messages: [{ role: "user", content: userContent }],
         }),
       });
       const d = await r.json();
       if (d.error) return NextResponse.json({ error: d.error.message }, { status: 500 });
-      const t = (d.content?.[0]?.text || "{}").replace(/```json|```/g, "").trim();
+      const t = (d.content?.[0]?.text || "{}").replace(/```json\n?|```/g, "").trim();
       return NextResponse.json(JSON.parse(t));
     }
 
